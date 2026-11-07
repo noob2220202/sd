@@ -26,8 +26,8 @@ function shell(ctx, m) {
   const body = BUILDERS[m.kind] ? BUILDERS[m.kind](ctx, m) : h('p', {}, '알 수 없는 창');
   const dlg = h(
     'div',
-    { class: `modal modal-${m.kind}`, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title' },
-    h('div', { class: 'modal-head' }, h('h2', { id: 'modal-title', class: 'modal-title' }, body.title), h('button', { type: 'button', class: 'icon-btn modal-close', 'aria-label': '닫기', onClick: () => actions.closeModal() }, icon('close'))),
+    { class: `modal modal-${m.kind}`, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title', 'data-testid': `modal-${m.kind}` },
+    h('div', { class: 'modal-head' }, h('h2', { id: 'modal-title', class: 'modal-title' }, body.title), h('button', { type: 'button', class: 'icon-btn modal-close', 'aria-label': '닫기', 'data-testid': 'modal-close', onClick: () => actions.closeModal() }, icon('close'))),
     h('div', { class: 'modal-body' }, body.el),
     body.foot ? h('div', { class: 'modal-foot' }, body.foot) : null,
   );
@@ -139,7 +139,7 @@ const BUILDERS = {
     return {
       title: '방 나가기',
       el: h('p', {}, inHand ? '진행 중인 판에 참여 중입니다. 나가면 이번 판은 다이 처리됩니다. 정말 나갈까요?' : '방을 나갈까요? 같은 브라우저로 다시 들어오면 칩은 복구되지 않습니다.'),
-      foot: [h('button', { type: 'button', class: 'btn btn-ghost', onClick: () => actions.closeModal() }, '취소'), h('button', { type: 'button', class: 'btn btn-danger', onClick: () => actions.leave() }, icon('exit', 'icon-sm'), '나가기')],
+      foot: [h('button', { type: 'button', class: 'btn btn-ghost', onClick: () => actions.closeModal() }, '취소'), h('button', { type: 'button', class: 'btn btn-danger', 'data-testid': 'leave-confirm', onClick: () => actions.leave() }, icon('exit', 'icon-sm'), '나가기')],
     };
   },
 };

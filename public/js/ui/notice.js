@@ -8,7 +8,8 @@ export function noticeSignature(ctx) {
   return {
     waiting: room.waiting, phase: room.phase, host: me.isHost, seat: me.seat, canRefill: me.canRefill, chips: me.chips,
     spectators: room.players.filter((p) => p.seat == null).map((p) => p.nickname),
-    full: room.players.filter((p) => p.seat != null).length >= room.settings.maxPlayers,
+    seated: room.players.filter((p) => p.seat != null).length, // 게임 시작 버튼 활성 조건(2명 이상)
+    max: room.settings.maxPlayers,
     inHand: Boolean(hand && hand.stage !== 'done' && hand.players.some((p) => p.id === me.id && !p.folded)),
     pending: ctx.ui.pending, conn: ctx.conn,
   };
@@ -21,9 +22,9 @@ export function buildNotice(ctx) {
   const spectators = room.players.filter((p) => p.seat == null);
   const hostBtns = [];
   if (me.isHost) {
-    if (room.phase === 'lobby') hostBtns.push(h('button', { type: 'button', class: 'btn btn-primary', disabled: disabled || seated.length < 2 || null, onClick: () => actions.host('start') }, icon('play', 'icon-sm'), '게임 시작'));
-    else if (room.phase === 'playing') hostBtns.push(h('button', { type: 'button', class: 'btn btn-ghost', disabled: disabled || null, onClick: () => actions.host('pause') }, icon('pause', 'icon-sm'), '일시정지'));
-    else if (room.phase === 'paused') hostBtns.push(h('button', { type: 'button', class: 'btn btn-primary', disabled: disabled || null, onClick: () => actions.host('resume') }, icon('play', 'icon-sm'), '재개'));
+    if (room.phase === 'lobby') hostBtns.push(h('button', { type: 'button', class: 'btn btn-primary', 'data-testid': 'start-game', disabled: disabled || seated.length < 2 || null, onClick: () => actions.host('start') }, icon('play', 'icon-sm'), '게임 시작'));
+    else if (room.phase === 'playing') hostBtns.push(h('button', { type: 'button', class: 'btn btn-ghost', 'data-testid': 'pause-game', disabled: disabled || null, onClick: () => actions.host('pause') }, icon('pause', 'icon-sm'), '일시정지'));
+    else if (room.phase === 'paused') hostBtns.push(h('button', { type: 'button', class: 'btn btn-primary', 'data-testid': 'resume-game', disabled: disabled || null, onClick: () => actions.host('resume') }, icon('play', 'icon-sm'), '재개'));
   }
   const meBtns = [];
   if (me.canRefill) meBtns.push(h('button', { type: 'button', class: 'btn btn-gold btn-sm', disabled: disabled || null, onClick: () => actions.refill(), title: `시작 칩(${formatChips(room.settings.startChips)})까지 충전` }, icon('refresh', 'icon-sm'), '리필'));
@@ -38,7 +39,7 @@ export function buildNotice(ctx) {
   return h(
     'div',
     { class: `notice-inner${msg ? ' has-msg' : ''}` },
-    msg ? h('div', { class: `notice-msg reason-${room.waiting.reason}` }, icon(room.waiting.reason === 'paused' ? 'pause' : 'info', 'icon-sm'), h('span', {}, msg)) : null,
+    msg ? h('div', { class: `notice-msg reason-${room.waiting.reason}`, 'data-testid': 'waiting-msg' }, icon(room.waiting.reason === 'paused' ? 'pause' : 'info', 'icon-sm'), h('span', {}, msg)) : null,
     h('div', { class: 'notice-actions' }, hostBtns, meBtns),
     spectators.length ? h('div', { class: 'spectators', title: '관전자' }, icon('eye', 'icon-sm'), h('span', {}, `관전 ${spectators.length}: ${spectators.map((p) => p.nickname).join(', ')}`)) : null,
   );

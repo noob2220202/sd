@@ -13,7 +13,7 @@ function timeStr(ts) {
 export function renderPanel(root, ctx) {
   const { room, ui, actions } = ctx;
   if (!root.firstElementChild) {
-    const input = h('input', { class: 'input chat-input', type: 'text', maxlength: '200', placeholder: '메시지 입력 후 Enter', autocomplete: 'off', 'aria-label': '채팅 메시지' });
+    const input = h('input', { class: 'input chat-input', type: 'text', maxlength: '200', placeholder: '메시지 입력 후 Enter', autocomplete: 'off', 'aria-label': '채팅 메시지', 'data-testid': 'chat-input' });
     const form = h(
       'form',
       {
@@ -28,7 +28,7 @@ export function renderPanel(root, ctx) {
         },
       },
       input,
-      h('button', { type: 'submit', class: 'btn btn-primary btn-sm', 'aria-label': '전송' }, icon('chevronRight', 'icon-sm')),
+      h('button', { type: 'submit', class: 'btn btn-primary btn-sm', 'aria-label': '전송', 'data-testid': 'chat-send' }, icon('chevronRight', 'icon-sm')),
     );
     root.append(
       h(
@@ -37,7 +37,7 @@ export function renderPanel(root, ctx) {
         h('div', { class: 'tabs', role: 'tablist' }, tabBtn('log', '로그', actions), tabBtn('chat', '채팅', actions)),
         h('button', { type: 'button', class: 'icon-btn panel-close', 'aria-label': '패널 닫기', onClick: () => actions.togglePanel(false) }, icon('close')),
       ),
-      h('div', { class: 'panel-body' }, h('ul', { class: 'list log-list', dataset: { tab: 'log' } }), h('ul', { class: 'list chat-list', dataset: { tab: 'chat' } })),
+      h('div', { class: 'panel-body' }, h('ul', { class: 'list log-list', dataset: { tab: 'log' }, 'data-testid': 'log-list' }), h('ul', { class: 'list chat-list', dataset: { tab: 'chat' }, 'data-testid': 'chat-list' })),
       h('div', { class: 'panel-foot' }, form),
     );
   }
@@ -73,7 +73,7 @@ export function renderPanel(root, ctx) {
 function tabBtn(id, label, actions) {
   return h(
     'button',
-    { type: 'button', class: 'tab', role: 'tab', dataset: { tab: id }, onClick: () => actions.setTab(id) },
+    { type: 'button', class: 'tab', role: 'tab', dataset: { tab: id }, 'data-testid': `tab-${id}`, onClick: () => actions.setTab(id) },
     icon(id === 'log' ? 'list' : 'chat', 'icon-sm'),
     label,
     h('span', { class: 'tab-badge', hidden: true }),

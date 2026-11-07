@@ -1,4 +1,5 @@
-// 테이블 중앙: 판돈/이월/칩 더미/단계 라벨/현재 베팅
+// 테이블 중앙: 단계 라벨 / 판돈 / 이월 / 현재 베팅·콜 / 칩 더미
+// "현재 베팅 · 콜" 줄은 판돈 바로 아래(칩 더미 위)에 두어 내 카드에 가려지지 않게 한다.
 import { h } from './dom.js';
 import { chipPile } from './chips.js';
 import { formatChips } from '../shared/format.js';
@@ -8,7 +9,7 @@ export function centerSignature(ctx) {
   const { hand, room } = ctx;
   const mine = hand ? hand.players.find((p) => p.id === room.me.id) : null;
   return {
-    hand: hand ? [hand.no, hand.stage, hand.pot, hand.carried, hand.cur, hand.regame, mine ? mine.roundBet : null, hand.turnId === room.me.id] : null,
+    hand: hand ? [hand.no, hand.stage, hand.pot, hand.carried, hand.cur, hand.regame, mine ? [mine.roundBet, mine.folded] : null, hand.turnId === room.me.id] : null,
     phase: room.phase,
     waiting: room.waiting ? room.waiting.reason : null,
     start: room.settings.startChips,
@@ -30,7 +31,7 @@ export function buildCenter(ctx) {
   const betting = hand.stage === 'bet1' || hand.stage === 'bet2';
   return h(
     'div',
-    { class: 'center-box' },
+    { class: `center-box stage-${hand.stage}` },
     h(
       'div',
       { class: 'stage-row' },
@@ -41,7 +42,6 @@ export function buildCenter(ctx) {
     h('div', { class: 'pot-label' }, '판돈'),
     h('div', { class: 'pot-amount' }, formatChips(hand.pot)),
     hand.carried > 0 ? h('div', { class: 'pot-carried' }, `이월 +${formatChips(hand.carried)}`) : null,
-    h('div', { class: 'pile-wrap' }, chipPile(hand.pot, room.settings.startChips)),
     betting
       ? h(
           'div',
@@ -50,5 +50,6 @@ export function buildCenter(ctx) {
           mine && !mine.folded ? h('span', { class: `cur-item ${hand.turnId === room.me.id ? 'cur-mine' : ''}` }, h('span', { class: 'cur-k' }, '콜'), h('span', { class: 'cur-v' }, formatChips(toCall))) : null,
         )
       : null,
+    h('div', { class: 'pile-wrap' }, chipPile(hand.pot, room.settings.startChips)),
   );
 }

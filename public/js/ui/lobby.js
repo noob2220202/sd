@@ -34,7 +34,7 @@ function build(ctx) {
   const savedNick = safeGet(LS_NICK) || '';
   const settingsForm = buildSettingsForm(DEFAULT_SETTINGS);
 
-  const createNick = nickInput(savedNick);
+  const createNick = nickInput(savedNick, 'create-nickname');
   const createForm = h(
     'form',
     {
@@ -53,11 +53,11 @@ function build(ctx) {
     },
     h('label', { class: 'field' }, h('span', { class: 'field-label' }, '닉네임'), createNick),
     h('details', { class: 'settings-details', open: true }, h('summary', {}, icon('sliders', 'icon-sm'), '방 설정'), settingsForm.el),
-    h('button', { type: 'submit', class: 'btn btn-primary btn-lg btn-block' }, icon('plus', 'icon-sm'), '방 만들기'),
+    h('button', { type: 'submit', class: 'btn btn-primary btn-lg btn-block', 'data-testid': 'create-submit' }, icon('plus', 'icon-sm'), '방 만들기'),
   );
 
-  const joinNick = nickInput(savedNick);
-  const codeInput = h('input', { class: 'input code-input', name: 'code', type: 'text', maxlength: '6', placeholder: '6자리 코드', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', required: true, 'aria-label': '방 코드' });
+  const joinNick = nickInput(savedNick, 'join-nickname');
+  const codeInput = h('input', { class: 'input code-input', name: 'code', type: 'text', maxlength: '6', placeholder: '6자리 코드', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', required: true, 'aria-label': '방 코드', 'data-testid': 'join-code' });
   codeInput.addEventListener('input', () => { codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); });
   const joinForm = h(
     'form',
@@ -74,7 +74,7 @@ function build(ctx) {
     },
     h('label', { class: 'field' }, h('span', { class: 'field-label' }, '방 코드'), codeInput),
     h('label', { class: 'field' }, h('span', { class: 'field-label' }, '닉네임'), joinNick),
-    h('button', { type: 'submit', class: 'btn btn-gold btn-lg btn-block' }, icon('chevronRight', 'icon-sm'), '참여하기'),
+    h('button', { type: 'submit', class: 'btn btn-gold btn-lg btn-block', 'data-testid': 'join-submit' }, icon('chevronRight', 'icon-sm'), '참여하기'),
   );
 
   return h(
@@ -88,7 +88,7 @@ function build(ctx) {
       h('p', { class: 'lobby-sub' }, '친구들과 즐기는 3장 섯다 · 무기명 · 가상 칩'),
       h('div', { class: 'lobby-conn' }),
     ),
-    h('p', { class: 'lobby-error', role: 'alert', hidden: true }),
+    h('p', { class: 'lobby-error', role: 'alert', hidden: true, 'data-testid': 'lobby-error' }),
     h(
       'div',
       { class: 'lobby-cards' },
@@ -115,8 +115,8 @@ function heroCard(id) {
   return h('div', { class: 'hero-card' }, img);
 }
 
-function nickInput(value) {
-  return h('input', { class: 'input', name: 'nickname', type: 'text', maxlength: '12', placeholder: '1~12자', value, autocomplete: 'nickname', required: true, 'aria-label': '닉네임' });
+function nickInput(value, testId) {
+  return h('input', { class: 'input', name: 'nickname', type: 'text', maxlength: '12', placeholder: '1~12자', value, autocomplete: 'nickname', required: true, 'aria-label': '닉네임', 'data-testid': testId || null });
 }
 
 function safeGet(k) {

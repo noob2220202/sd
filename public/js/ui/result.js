@@ -1,4 +1,6 @@
-// 결과 오버레이: 승자/족보/특수족보 결과/기권승/재경기 배너 + 승자에게 날아가는 칩 애니메이션
+// 결과 배너: 테이블 위쪽에 붙는 한 줄짜리 띠(승자/족보/+금액/특수족보/카운트다운/재경기 참가).
+// 공개된 카드와 족보는 각 좌석(seats.js 의 콜아웃)에서 보여 주므로 배너는 카드를 가리지 않는다.
+// 승자에게 날아가는 칩 애니메이션도 여기서 담당한다.
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { flyingChip } from './chips.js';
@@ -8,7 +10,7 @@ import { SPECIAL_LABELS, SPECIAL_FALLBACK, REGAME_REASON } from './texts.js';
 export function resultSignature(ctx) {
   const { hand } = ctx;
   if (!hand || hand.stage !== 'done' || !hand.result) return null;
-  return { no: hand.no, inter: hand.intermission ? [hand.intermission.until, hand.intermission.rejoined, hand.intermission.rejoinable] : null, winners: hand.result.winners, pending: ctx.ui.pending, hidden: ctx.ui.resultHidden };
+  return { no: hand.no, inter: hand.intermission ? [hand.intermission.until, hand.intermission.rejoined, hand.intermission.rejoinable] : null, winners: hand.result.winners, pending: ctx.ui.pending, conn: ctx.conn };
 }
 
 const nick = (room, id) => (room.players.find((p) => p.id === id) || {}).nickname || '?';
@@ -16,11 +18,12 @@ const nick = (room, id) => (room.players.find((p) => p.id === id) || {}).nicknam
 export function buildResult(ctx) {
   const { hand, room, me, actions, ui } = ctx;
   if (!hand || hand.stage !== 'done' || !hand.result) return null;
-  if (ui.resultHidden === hand.no) return h('button', { type: 'button', class: 'btn btn-xs btn-ghost result-show', onClick: () => actions.showResult() }, icon('eye', 'icon-sm'), '결과 보기');
   const r = hand.result;
   const inter = hand.intermission;
-  const closeBtn = h('button', { type: 'button', class: 'result-close', 'aria-label': '결과 닫기', onClick: () => actions.hideResult(hand.no) }, icon('close', 'icon-sm'));
-  const countdown = inter ? h('div', { class: 'result-countdown' }, r.regameNext || inter.regameNext ? '재경기 시작까지 ' : '다음 판까지 ', h('span', { dataset: { until: String(inter.until) } }, '')) : null;
+  const disabled = ui.pending || ctx.conn !== 'open';
+  const countdown = inter
+    ? h('div', { class: 'result-countdown' }, r.regameNext || inter.regameNext ? '재경기 시작까지 ' : '다음 판까지 ', h('span', { dataset: { until: String(inter.until) } }, ''))
+    : null;
 
   // ---- 재경기 ----
   if (r.type === 'regame') {
@@ -31,18 +34,23 @@ export function buildResult(ctx) {
     const canRejoin = inter && inter.rejoinable?.includes(me.id) && !inter.rejoined?.includes(me.id);
     return h(
       'div',
-      { class: 'result-card result-regame' },
-      closeBtn,
-      h('div', { class: 'result-kicker' }, reason),
-      h('h3', { class: 'result-title' }, `재경기 — 판돈 ${formatChips(r.carriedNext)} 이월`),
-      reveals(ctx, r),
-      specialsList(ctx, r),
-      h('div', { class: 'result-line' }, h('span', { class: 'k' }, '참가'), h('span', {}, participants.join(', ') || '없음')),
-      rejoined.length ? h('div', { class: 'result-line' }, h('span', { class: 'k' }, '추가 참가'), h('span', {}, rejoined.join(', '))) : null,
-      canRejoin
-        ? h('button', { type: 'button', class: 'btn btn-gold btn-lg', disabled: ui.pending || null, onClick: () => actions.rejoin() }, icon('plus', 'icon-sm'), `재경기 참가 (${formatChips(inter.rejoinFee)} 지불)`)
-        : null,
-      countdown,
+      { class: 'result-card result-regame', role: 'status' },
+      h('div', { class: 'result-main' }, h('span', { class: 'result-kicker' }, reason), h('span', { class: 'result-title' }, '재경기'), h('span', { class: 'result-carry' }, `판돈 ${formatChips(r.carriedNext)} 이월`)),
+      h(
+        'div',
+        { class: 'result-lines' },
+        revealLine(ctx, r),
+        specialsList(ctx, r),
+        h('span', { class: 'result-line' }, h('span', { class: 'k' }, '참가'), h('span', {}, participants.join(', ') || '없음'), rejoined.length ? h('span', { class: 'k' }, '+ 추가') : null, rejoined.length ? h('span', {}, rejoined.join(', ')) : null),
+      ),
+      h(
+        'div',
+        { class: 'result-side' },
+        canRejoin
+          ? h('button', { type: 'button', class: 'btn btn-gold btn-sm result-rejoin', disabled: disabled || null, onClick: () => actions.rejoin() }, icon('plus', 'icon-sm'), `재경기 참가 (${formatChips(inter.rejoinFee)} 지불)`)
+          : inter?.rejoined?.includes(me.id) ? h('span', { class: 'result-note' }, '재경기 참가 완료') : null,
+        countdown,
+      ),
     );
   }
 
@@ -51,13 +59,10 @@ export function buildResult(ctx) {
     const w = r.winners[0];
     return h(
       'div',
-      { class: 'result-card result-fold' },
-      closeBtn,
-      h('div', { class: 'result-kicker' }, '기권승'),
-      h('h3', { class: 'result-title' }, h('span', { class: 'winner-name' }, nick(room, w)), ' 승리'),
-      h('div', { class: 'result-payout' }, formatSigned(r.payouts[w] || r.pot)),
-      h('p', { class: 'result-note' }, '모두 다이하여 카드를 공개하지 않습니다'),
-      countdown,
+      { class: 'result-card result-fold', role: 'status' },
+      h('div', { class: 'result-main' }, h('span', { class: 'result-kicker' }, '기권승'), h('span', { class: 'winner-name' }, nick(room, w)), h('span', { class: 'winner-amt' }, formatSigned(r.payouts[w] || r.pot))),
+      h('div', { class: 'result-lines' }, h('span', { class: 'result-note' }, '모두 다이하여 카드를 공개하지 않습니다')),
+      h('div', { class: 'result-side' }, countdown),
     );
   }
 
@@ -65,7 +70,7 @@ export function buildResult(ctx) {
   const winnerLines = r.winners.map((id) => {
     const rv = r.reveals[id];
     return h(
-      'div',
+      'span',
       { class: 'winner-line' },
       h('span', { class: 'winner-name' }, nick(room, id)),
       rv ? h('span', { class: 'winner-hand' }, rv.hand.name) : null,
@@ -75,43 +80,41 @@ export function buildResult(ctx) {
   const tiePots = r.pots.filter((p) => p.tie);
   return h(
     'div',
-    { class: 'result-card result-showdown' },
-    closeBtn,
-    h('div', { class: 'result-kicker' }, icon('trophy', 'icon-sm'), '승부'),
-    h('div', { class: 'winner-block' }, winnerLines),
-    specialsList(ctx, r),
-    reveals(ctx, r, r.winners),
-    tiePots.length ? h('div', { class: 'result-line' }, h('span', { class: 'k' }, '동점 이월'), h('span', {}, `${formatChips(r.carriedNext)} (${tiePots.flatMap((p) => p.tied).map((id) => nick(room, id)).join(', ')})`)) : null,
-    r.pots.length > 1 ? h('div', { class: 'result-line small' }, h('span', { class: 'k' }, '팟'), h('span', {}, r.pots.map((p, i) => `${i === 0 ? '메인' : '사이드' + i} ${formatChips(p.amount)} → ${p.tie ? '이월' : nick(room, p.winner)}`).join(' · '))) : null,
-    countdown,
+    { class: 'result-card result-showdown', role: 'status' },
+    h('div', { class: 'result-main' }, h('span', { class: 'result-kicker' }, icon('trophy', 'icon-xs'), '승부'), winnerLines),
+    h(
+      'div',
+      { class: 'result-lines' },
+      specialsList(ctx, r),
+      revealLine(ctx, r, r.winners),
+      tiePots.length ? h('span', { class: 'result-line' }, h('span', { class: 'k' }, '동점 이월'), h('span', {}, `${formatChips(r.carriedNext)} (${tiePots.flatMap((p) => p.tied).map((id) => nick(room, id)).join(', ')})`)) : null,
+      r.pots.length > 1 ? h('span', { class: 'result-line small' }, h('span', { class: 'k' }, '팟'), h('span', {}, r.pots.map((p, i) => `${i === 0 ? '메인' : '사이드' + i} ${formatChips(p.amount)} → ${p.tie ? '이월' : nick(room, p.winner)}`).join(' · '))) : null,
+    ),
+    h('div', { class: 'result-side' }, countdown),
   );
 }
 
-/** 공개된 패 목록 (승자 제외 또는 전체) */
-function reveals(ctx, r, exclude = []) {
+/** 공개된 패 요약 (승자 제외 또는 전체): "민수 삥땡 · 태호 한끗" */
+function revealLine(ctx, r, exclude = []) {
   const ids = Object.keys(r.reveals || {}).filter((id) => !exclude.includes(id));
   if (!ids.length) return null;
   return h(
-    'div',
+    'span',
     { class: 'reveal-list' },
-    ids.map((id) => h('div', { class: 'reveal-line' }, h('span', { class: 'rv-name' }, (ctx.room.players.find((p) => p.id === id) || {}).nickname || '?'), h('span', { class: 'rv-hand' }, r.reveals[id].hand.name))),
+    ids.map((id) => h('span', { class: 'reveal-line' }, h('span', { class: 'rv-name' }, nick(ctx.room, id)), h('span', { class: 'rv-hand' }, r.reveals[id].hand.name))),
   );
 }
 
-/** 특수족보 결과 문구: "땡잡이 성공!" / "암행어사 실패 → 한끗" */
+/** 특수족보 결과 문구: "현우 땡잡이 성공!" / "민수 암행어사 실패 → 한끗" */
 function specialsList(ctx, r) {
   if (!r.specials || !r.specials.length) return null;
-  return h(
-    'div',
-    { class: 'specials-list' },
-    r.specials.map((s) => {
-      const name = (ctx.room.players.find((p) => p.id === s.id) || {}).nickname || '?';
-      const label = SPECIAL_LABELS[s.kind] || s.kind;
-      const isRegame = s.kind === 'gusa' || s.kind === 'mungGusa';
-      const text = s.success ? `${label} ${isRegame ? '발동 — 재경기' : '성공!'}` : `${label} 실패 → ${SPECIAL_FALLBACK[s.kind] || ''}`;
-      return h('div', { class: `special-line ${s.success ? 'ok' : 'fail'}` }, h('span', { class: 'sp-name' }, name), h('span', { class: 'sp-text' }, text));
-    }),
-  );
+  return r.specials.map((s) => {
+    const name = nick(ctx.room, s.id);
+    const label = SPECIAL_LABELS[s.kind] || s.kind;
+    const isRegame = s.kind === 'gusa' || s.kind === 'mungGusa';
+    const text = s.success ? `${label} ${isRegame ? '발동 — 재경기' : '성공!'}` : `${label} 실패 → ${SPECIAL_FALLBACK[s.kind] || ''}`;
+    return h('span', { class: `special-line ${s.success ? 'ok' : 'fail'}` }, h('span', { class: 'sp-name' }, name), h('span', { class: 'sp-text' }, text));
+  });
 }
 
 /**
@@ -128,7 +131,8 @@ export function flyChips(layer, from, targets) {
   const fx = fr.left + fr.width / 2 - lr.left;
   const fy = fr.top + fr.height / 2 - lr.top;
   for (const t of targets) {
-    const tr = t.getBoundingClientRect();
+    const plate = t.querySelector('.seat-plate') || t;
+    const tr = plate.getBoundingClientRect();
     const tx = tr.left + tr.width / 2 - lr.left;
     const ty = tr.top + tr.height / 2 - lr.top;
     for (let i = 0; i < 10; i++) {

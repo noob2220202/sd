@@ -1,4 +1,6 @@
-// 좌석 렌더링: 내 좌석은 항상 하단 중앙, 나머지는 좌석 번호 차이만큼 시계방향으로 회전 배치.
+// 좌석 렌더링: 내 좌석은 항상 하단 중앙, 나머지는 좌석 번호 차이만큼 시계방향으로 배치.
+// 좌석 수별로 미리 조정한 슬롯 표(LAYOUTS)를 쓴다: 어떤 좌석의 카드도 다른 좌석의 카드/플레이트나 내 카드와 겹치지 않도록
+// 아래쪽 양옆 좌석은 플레이트 위에 카드를 쌓고(bottom), 좌우 좌석은 플레이트 안쪽으로 카드를 내민다(left/right).
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { cardEl } from './cards.js';
@@ -14,24 +16,26 @@ function cardSig(cards) {
   return (cards || []).map((c) => (c.id ? c.id : 'h')).join(',');
 }
 
-// 좌석 수별 슬롯 각도(도). 슬롯 0(나) = 90(하단), 시계방향 증가.
-// 6명/5명은 하단 양옆 좌석이 내 카드와 겹치지 않도록 균등 분할 대신 약간 위쪽으로 당긴다.
-const ANGLES = {
-  6: [90, 160, 205, 270, 335, 20],
-  5: [90, 165, 232, 308, 15],
+/**
+ * 좌석 수별 슬롯 배치. 슬롯 0 = 나(하단 중앙), 이후 시계방향.
+ * x/y 는 테이블 영역(.table-wrap) 기준 퍼센트.
+ *  - bottom: 플레이트가 x 에서 아래쪽(bottom: y%)에 붙고 카드는 그 위로 쌓인다 (나, 5~6인 테이블의 아래쪽 양옆 좌석)
+ *  - top:    플레이트가 위쪽에 붙고 카드는 그 아래로 (카드 옆에 베팅 칩)
+ *  - left/right: 플레이트 중심이 (x, y). 카드는 테이블 안쪽(가로)으로 뻗는다. 좁은 화면에서는 CSS 가 top 과 같은 세로 배치로 바꾼다
+ */
+const S = (side, x, y = 0) => ({ side, x, y });
+const LAYOUTS = {
+  2: [S('bottom', 50), S('top', 50)],
+  3: [S('bottom', 50), S('left', 11, 40), S('right', 89, 40)],
+  4: [S('bottom', 50), S('left', 11, 42), S('top', 50), S('right', 89, 42)],
+  5: [S('bottom', 50), S('bottom', 16, 10), S('top', 27), S('top', 73), S('bottom', 84, 10)],
+  6: [S('bottom', 50), S('bottom', 16, 10), S('top', 24), S('top', 50), S('top', 76), S('bottom', 84, 10)],
 };
-export function slotAngle(k, n) {
-  if (ANGLES[n]) return ANGLES[n][k];
-  return 90 + (k * 360) / n;
-}
 
-/** 각도 → 좌석이 테이블의 어느 변에 붙는지 */
-export function sideOf(angle) {
-  const a = ((angle % 360) + 360) % 360;
-  if (a === 90) return 'bottom';
-  if (a === 270) return 'top';
-  if (a > 90 && a < 270) return 'left';
-  return 'right';
+/** 슬롯 k (0 = 나) 의 배치. 좌석 수가 표에 없으면 6인 표를 비례해서 쓴다. */
+export function slotLayout(k, n) {
+  const table = LAYOUTS[n] || LAYOUTS[6];
+  return table[Math.min(k, table.length - 1)];
 }
 
 /**
@@ -47,7 +51,7 @@ export function seatsSignature(ctx) {
     players: room.players.map((p) => [p.id, p.nickname, p.seat, p.chips, p.connected, p.status, p.isHost]),
     hand: hand
       ? {
-          no: hand.no, stage: hand.stage, turn: hand.turnId, dealer: hand.dealerId, deadline: hand.deadline,
+          no: hand.no, stage: hand.stage, turn: hand.turnId, dealer: hand.dealerId, deadline: hand.deadline, total: hand.deadlineTotal,
           ps: hand.players.map((p) => [p.id, cardSig(p.cards), p.openIdx, p.folded, p.allIn, p.roundBet, p.handBet, p.hasSelected, p.hasChosenOpen, p.selected, p.reveal && p.reveal.hand.name]),
           result: hand.result ? [hand.result.type, hand.result.winners, hand.result.payouts, hand.result.specials] : null,
         }
@@ -61,8 +65,8 @@ export function seatsSignature(ctx) {
 
 /** 좌석 레이어의 자식 요소들 생성 */
 export function buildSeats(ctx) {
-  const { room, hand, me, ui, actions } = ctx;
-  const n = room.settings.maxPlayers;
+  const { room, hand, me } = ctx;
+  const n = Math.max(2, Math.min(6, room.settings.maxPlayers || 6));
   const mySeat = me.seat ?? 0;
   if (hand && seenHand !== hand.no) {
     seenHand = hand.no;
@@ -71,19 +75,27 @@ export function buildSeats(ctx) {
   const out = [];
   for (let s = 0; s < n; s++) {
     const k = (s - mySeat + n) % n;
-    const angle = slotAngle(k, n);
+    const layout = slotLayout(k, n);
     const player = room.players.find((p) => p.seat === s) || null;
     const hp = player && hand ? hand.players.find((p) => p.id === player.id) || null : null;
-    out.push(player ? seatEl(ctx, player, hp, { angle, slot: k, seatNo: s }) : emptySeatEl(ctx, { angle, slot: k, seatNo: s }));
+    out.push(player ? seatEl(ctx, player, hp, { layout, slot: k, seatNo: s }) : emptySeatEl(ctx, { layout, slot: k, seatNo: s }));
   }
   return out;
 }
 
-function emptySeatEl(ctx, { angle, slot, seatNo }) {
+function seatAttrs(classes, layout, slot, extra = {}) {
+  return {
+    class: classes.join(' '),
+    dataset: { side: layout.side, slot: String(slot), ...extra },
+    style: { '--sx': `${layout.x}%`, '--sy': `${layout.y}%` },
+  };
+}
+
+function emptySeatEl(ctx, { layout, slot, seatNo }) {
   const canSit = ctx.me.seat == null && ctx.conn === 'open';
   return h(
     'div',
-    { class: 'seat seat-empty', dataset: { side: sideOf(angle), slot: String(slot) }, style: { '--ang-base': `${angle}deg` } },
+    seatAttrs(['seat', 'seat-empty'], layout, slot),
     h(
       'div',
       { class: 'seat-plate empty-plate' },
@@ -93,7 +105,7 @@ function emptySeatEl(ctx, { angle, slot, seatNo }) {
   );
 }
 
-function seatEl(ctx, player, hp, { angle, slot }) {
+function seatEl(ctx, player, hp, { layout, slot }) {
   const { room, hand, me, ui, actions } = ctx;
   const isMe = player.id === me.id;
   const isTurn = Boolean(hand && hand.turnId === player.id && hand.stage !== 'done');
@@ -144,9 +156,7 @@ function seatEl(ctx, player, hp, { angle, slot }) {
     else if (prev === 'h' && nowVisible) anim = 'flip';
     const selectedHere = Array.isArray(mySelected) && mySelected.includes(i);
     const dimUnselected = isMe && hp && hp.hasSelected && hp.selected && !hp.selected.includes(i) && (myStage === 'done' || myStage === 'select');
-    let tag = null;
-    if (isMe && c.open) tag = '공개';
-    if (!isMe && hp && hp.reveal && c.id && !c.open && myStage === 'done') tag = null;
+    const tag = isMe && c.open ? '공개' : null;
     const selectable = canChooseOpen || canSelect;
     return cardEl(c, {
       size: isMe ? 'lg' : 'sm',
@@ -165,37 +175,39 @@ function seatEl(ctx, player, hp, { angle, slot }) {
     });
   });
 
-  // 족보 콜아웃 (쇼다운 공개 후)
+  // 족보 콜아웃 (쇼다운 공개 후) — 카드 위에 겹쳐 띄워 세로 공간을 차지하지 않는다
   let callout = null;
   if (hp && hp.reveal && myStage === 'done') {
     const specials = (result?.specials || []).filter((s) => s.id === player.id);
     callout = h(
       'div',
-      { class: 'hand-callout' },
+      { class: `hand-callout${isWinner ? ' is-winner' : ''}` },
       h('span', { class: 'hand-name' }, hp.reveal.hand.name),
       specials.map((s) =>
         h('span', { class: `special-tag ${s.success ? 'ok' : 'fail'}` }, `${SPECIAL_LABELS[s.kind] || s.kind} ${s.success ? '성공' : '실패'}`),
       ),
     );
   } else if (result && result.type === 'fold' && isWinner) {
-    callout = h('div', { class: 'hand-callout' }, h('span', { class: 'hand-name' }, '기권승'));
+    callout = h('div', { class: 'hand-callout is-winner' }, h('span', { class: 'hand-name' }, '기권승'));
   }
 
   const cardsWrap = h('div', { class: 'seat-cards' }, cardEls.length ? h('div', { class: 'card-row' }, cardEls) : null, callout);
 
   // 아바타 + 타이머 링
+  const total = hand && hand.deadlineTotal ? hand.deadlineTotal : (room.settings.turnSeconds || 30) * 1000;
   const ring =
     isTurn && hand.deadline
-      ? `<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="ring-bg" cx="24" cy="24" r="21"/><circle class="ring-fg" cx="24" cy="24" r="21" data-deadline="${hand.deadline}" data-total="${(room.settings.turnSeconds || 30) * 1000}"/></svg>`
+      ? `<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="ring-bg" cx="24" cy="24" r="21"/><circle class="ring-fg" cx="24" cy="24" r="21" data-deadline="${hand.deadline}" data-total="${total}"/></svg>`
       : '';
   const avatar = h('div', { class: 'avatar', html: ring });
   avatar.append(h('span', { class: 'initial' }, (player.nickname || '?').slice(0, 1)));
   avatar.append(h('span', { class: `conn-dot ${player.connected ? 'on' : 'off'}`, title: player.connected ? '접속 중' : '접속 끊김' }));
 
-  // 플레이트
+  // 플레이트 — 배지(선 토큰/상태/남은 시간/메뉴)는 모두 플레이트 가장자리의 여백 위에만 놓여 닉네임·금액을 가리지 않는다
+  const hasMenu = me.isHost && !isMe;
   const plate = h(
     'div',
-    { class: 'seat-plate' },
+    { class: `seat-plate${hasMenu ? ' has-menu' : ''}` },
     avatar,
     h(
       'div',
@@ -207,10 +219,11 @@ function seatEl(ctx, player, hp, { angle, slot }) {
     isDealer ? h('span', { class: 'dealer-token', title: '선(보스)' }, '선') : null,
     statusText ? h('span', { class: `status-tag st-${folded ? 'folded' : hp && hp.allIn ? 'allin' : 'info'}` }, statusText) : null,
     isTurn && hand.deadline ? h('span', { class: 'turn-time', dataset: { until: String(hand.deadline) } }, '') : null,
+    payout > 0 ? h('span', { class: 'seat-payout' }, formatSigned(payout)) : null,
   );
 
   // 방장 전용 좌석 메뉴 (다른 플레이어)
-  if (me.isHost && !isMe) {
+  if (hasMenu) {
     const open = ui.seatMenu === player.id;
     plate.append(
       h(
@@ -235,12 +248,10 @@ function seatEl(ctx, player, hp, { angle, slot }) {
   const roundBet = hp && hand.stage !== 'done' && (hand.stage === 'bet1' || hand.stage === 'bet2') ? hp.roundBet : 0;
   const bet = roundBet > 0 ? h('div', { class: 'seat-bet' }, chipStack(roundBet, room.settings.base), h('span', { class: 'bet-amount' }, formatChips(roundBet))) : h('div', { class: 'seat-bet seat-bet-empty' });
 
-  const el = h(
+  return h(
     'div',
-    { class: classes.join(' '), dataset: { id: player.id, side: sideOf(angle), slot: String(slot) }, style: { '--ang-base': `${angle}deg` } },
+    seatAttrs(classes, layout, slot, { id: player.id }),
     plate,
     h('div', { class: 'seat-inner' }, cardsWrap, bet),
   );
-  if (payout > 0) el.append(h('div', { class: 'seat-payout' }, formatSigned(payout)));
-  return el;
 }

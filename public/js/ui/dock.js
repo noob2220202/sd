@@ -23,6 +23,18 @@ export function dockSignature(ctx) {
 const nick = (room, id) => (room.players.find((p) => p.id === id) || {}).nickname || '?';
 
 export function buildDock(ctx) {
+  const el = buildDockInner(ctx);
+  if (el && ctx.hand) {
+    // 테스트/디버그용 상태 표식: 어느 판·단계인지, 내 차례인지
+    el.dataset.testid = 'dock';
+    el.dataset.handNo = String(ctx.hand.no);
+    el.dataset.stage = ctx.hand.stage;
+    if (ctx.hand.turnId === ctx.me.id) el.dataset.mine = '1';
+  }
+  return el;
+}
+
+function buildDockInner(ctx) {
   const { hand, room, me, ui, actions } = ctx;
   if (!hand) return null;
   const mine = hand.players.find((p) => p.id === me.id) || null;
@@ -45,6 +57,7 @@ export function buildDock(ctx) {
               {
                 type: 'button',
                 class: `act act-${a.kind}${a.allIn ? ' act-allin-flag' : ''}`,
+                'data-testid': `action-${a.kind}`,
                 disabled: disabled || null,
                 dataset: { kind: a.kind, key: String(i + 1) },
                 onClick: () => actions.act(a.kind),
@@ -117,6 +130,7 @@ export function buildDock(ctx) {
               {
                 type: 'button',
                 class: `pair-opt${active ? ' active' : ''}`,
+                'data-testid': `pair-${idx[0]}${idx[1]}`,
                 disabled: disabled || null,
                 onClick: () => actions.setSelect(idx),
               },
@@ -128,7 +142,7 @@ export function buildDock(ctx) {
         ),
         h(
           'button',
-          { type: 'button', class: 'btn btn-primary btn-confirm', disabled: !ready || disabled || null, onClick: () => actions.select() },
+          { type: 'button', class: 'btn btn-primary btn-confirm', 'data-testid': 'select-confirm', disabled: !ready || disabled || null, onClick: () => actions.select() },
           icon('check', 'icon-sm'),
           ready ? `확정 — ${pairs.find((p) => p.idx[0] === Math.min(...sel) && p.idx[1] === Math.max(...sel))?.hand.name}` : '두 장을 선택하세요',
         ),
@@ -155,7 +169,7 @@ export function buildDock(ctx) {
       );
       if (inter.rejoinable?.includes(me.id) && !inter.rejoined?.includes(me.id)) {
         parts.push(
-          h('button', { type: 'button', class: 'btn btn-gold', disabled: disabled || null, onClick: () => actions.rejoin() }, icon('plus', 'icon-sm'), `재경기 참가 (${formatChips(inter.rejoinFee)} 지불)`),
+          h('button', { type: 'button', class: 'btn btn-gold', 'data-testid': 'rejoin', disabled: disabled || null, onClick: () => actions.rejoin() }, icon('plus', 'icon-sm'), `재경기 참가 (${formatChips(inter.rejoinFee)} 지불)`),
         );
       } else if (inter.rejoined?.includes(me.id)) parts.push(h('span', { class: 'dock-note' }, '재경기 참가 완료'));
     } else if (room.phase === 'paused') parts.push(h('span', {}, '일시정지 — 방장이 재개하면 다음 판이 시작됩니다'));

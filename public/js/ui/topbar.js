@@ -15,20 +15,20 @@ export function buildTopbar(ctx) {
       'div',
       { class: 'tb-left' },
       h('span', { class: 'tb-logo' }, '섯다'),
-      h('span', { class: 'room-code', title: '방 코드' }, h('span', { class: 'rc-k' }, '방'), h('span', { class: 'rc-v' }, room.code)),
-      h('button', { type: 'button', class: 'btn btn-xs btn-ghost tb-copy', onClick: () => actions.copyInvite() }, icon('link', 'icon-sm'), h('span', { class: 'tb-label' }, '초대 링크 복사')),
+      h('span', { class: 'room-code', title: '방 코드' }, h('span', { class: 'rc-k' }, '방'), h('span', { class: 'rc-v', 'data-testid': 'room-code' }, room.code)),
+      h('button', { type: 'button', class: 'btn btn-xs btn-ghost tb-copy', 'data-testid': 'invite-copy', onClick: () => actions.copyInvite() }, icon('link', 'icon-sm'), h('span', { class: 'tb-label' }, '초대 링크 복사')),
     ),
     h('div', { class: 'tb-center' }, connPill(ctx.conn)),
     h(
       'div',
       { class: 'tb-right' },
-      tbBtn('book', '장부', () => actions.openModal('ledger')),
-      tbBtn('sliders', me.isHost ? '설정' : '설정 보기', () => actions.openModal('settings')),
-      tbBtn('rules', '규칙', () => actions.openModal('rules')),
-      tbBtn('exit', '나가기', () => actions.openModal('leave'), 'tb-leave'),
+      tbBtn('book', '장부', () => actions.openModal('ledger'), '', 'ledger-open'),
+      tbBtn('sliders', me.isHost ? '설정' : '설정 보기', () => actions.openModal('settings'), '', 'settings-open'),
+      tbBtn('rules', '규칙', () => actions.openModal('rules'), '', 'rules-open'),
+      tbBtn('exit', '나가기', () => actions.openModal('leave'), 'tb-leave', 'leave-open'),
       h(
         'button',
-        { type: 'button', class: 'icon-btn tb-panel', 'aria-label': '로그/채팅 패널', 'aria-expanded': String(ui.panelOpen), onClick: () => actions.togglePanel() },
+        { type: 'button', class: 'icon-btn tb-panel', 'data-testid': 'panel-toggle', 'aria-label': '로그/채팅 패널', 'aria-expanded': String(ui.panelOpen), onClick: () => actions.togglePanel() },
         icon('chat'),
         unread > 0 ? h('span', { class: 'badge' }, unread > 99 ? '99+' : String(unread)) : null,
       ),
@@ -36,8 +36,8 @@ export function buildTopbar(ctx) {
   ];
 }
 
-function tbBtn(ic, label, onClick, extra = '') {
-  return h('button', { type: 'button', class: `btn btn-xs btn-ghost tb-btn ${extra}`, onClick, 'aria-label': label, title: label }, icon(ic, 'icon-sm'), h('span', { class: 'tb-label' }, label));
+function tbBtn(ic, label, onClick, extra = '', testId = null) {
+  return h('button', { type: 'button', class: `btn btn-xs btn-ghost tb-btn ${extra}`, onClick, 'aria-label': label, title: label, 'data-testid': testId }, icon(ic, 'icon-sm'), h('span', { class: 'tb-label' }, label));
 }
 
 export function connPill(conn) {

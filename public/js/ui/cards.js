@@ -45,6 +45,8 @@ export function cardEl(card, opts = {}) {
   // 뒷면
   const back = h('div', { class: 'card-face card-back-face' }, h('img', { src: `${CARD_DIR}back.svg`, alt: '', draggable: 'false' }));
   inner.append(back, front);
+  // 애니메이션이 끝나면 클래스를 떼어 fill-mode 가 남지 않게 한다(남아 있으면 3D 뒤집기가 평면화되어 뒷면이 흰색으로 보임)
+  if (opts.anim) inner.addEventListener('animationend', () => el.classList.remove(`card-anim-${opts.anim}`), { once: true });
   el.append(inner);
   if (opts.tag) el.append(h('span', { class: 'card-tag' }, opts.tag));
   if (opts.selected) el.append(h('span', { class: 'card-check', 'aria-hidden': 'true' }));

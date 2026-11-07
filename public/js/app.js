@@ -1,5 +1,6 @@
 // 부트스트랩: 네트워크(또는 목) 연결, 상태 보관, 메시지 처리, 단일 render() 진입점
 import { Net, defaultWsUrl } from './net.js';
+import { resetSection } from './ui/dom.js';
 import { renderLobby } from './ui/lobby.js';
 import { renderTable } from './ui/table.js';
 import { renderModals } from './ui/modals.js';
@@ -297,6 +298,7 @@ function render() {
       if (root.dataset.view !== 'lobby') {
         root.dataset.view = 'lobby';
         root.replaceChildren();
+        resetSection(root); // 테이블에서 돌아오면 로비 뼈대를 다시 만든다
       }
       renderLobby(root, c);
     }
