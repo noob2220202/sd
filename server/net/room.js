@@ -713,6 +713,7 @@ export class Room {
     this._clearTimer();
     this.timerKind = kind;
     this.deadline = this.now() + ms;
+    this.deadlineTotal = ms;
     this.timer = this._setTimeout(() => {
       this.timer = null;
       this.timerKind = null;
@@ -847,6 +848,7 @@ export class Room {
     if (this.hand) {
       hand = this.hand.view(viewerId);
       hand.deadline = this.deadline && this.timerKind !== 'intermission' ? this.deadline : null;
+      hand.deadlineTotal = hand.deadline ? this.deadlineTotal : null; // 현재 단계 제한시간 전체 길이(ms) — 타이머 링 비율 계산용
       hand.intermission = this.intermission
         ? {
             until: this.intermission.until,

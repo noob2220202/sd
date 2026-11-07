@@ -41,5 +41,5 @@ function tbBtn(ic, label, onClick, extra = '') {
 }
 
 export function connPill(conn) {
-  return h('span', { class: `conn-pill conn-${conn}`, role: 'status' }, h('span', { class: 'conn-ind' }), CONN_LABELS[conn] || conn);
+  return h('span', { class: `conn-pill conn-${conn}`, role: 'status' }, h('span', { class: 'conn-ind' }), h('span', { class: 'conn-label' }, CONN_LABELS[conn] || conn));
 }

@@ -1,0 +1,46 @@
+/* 모달 */
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade-in 0.15s ease; }
+.modal { width: min(100%, 680px); max-height: calc(100vh - 32px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: var(--shadow); animation: pop-in 0.18s ease; }
+.modal-rules, .modal-credits { width: min(100%, 760px); }
+.modal-leave { width: min(100%, 440px); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 12px 20px; border-bottom: 1px solid var(--line); flex: none; }
+.modal-title { font-family: var(--font-title); font-size: 22px; color: var(--gold-2); }
+.modal-body { padding: 18px 20px; overflow-y: auto; min-height: 0; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); flex: none; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+/* 크레딧 */
+.credits-lead, .rules-lead, .ledger-lead { color: var(--text-dim); font-size: 14px; margin-bottom: 14px; }
+.credits-sec { margin-bottom: 16px; }
+.credits-sec h3, .rules h3 { font-size: 15px; color: var(--gold-2); margin-bottom: 6px; margin-top: 16px; }
+.credits-sec ul { list-style: disc; padding-left: 18px; color: var(--text-dim); font-size: 13.5px; display: grid; gap: 4px; word-break: break-word; }
+.credits-links { display: flex; gap: 12px; margin-top: 6px; font-size: 13px; }
+.credits-foot { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--gold-dim); border-radius: var(--radius-sm); font-size: 13px; color: var(--gold-2); text-align: center; }
+
+/* 규칙 */
+.rules-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rules-table th, .rules-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.rules-table th { color: var(--text-mute); font-weight: 400; font-size: 12px; }
+.rules-table td.first { font-family: var(--font-title); color: var(--gold-2); white-space: nowrap; font-size: 15px; }
+.rules-list { padding-left: 18px; color: var(--text-dim); font-size: 13.5px; display: grid; gap: 4px; }
+ol.rules-list { list-style: decimal; }
+ul.rules-list { list-style: disc; }
+
+/* 장부 */
+.ledger-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ledger-table th, .ledger-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.ledger-table th { color: var(--text-mute); font-weight: 400; font-size: 12px; }
+.ledger-table td.first, .ledger-table th:first-child { text-align: left; }
+.ledger-table td.first { display: flex; align-items: center; gap: 6px; }
+.ledger-table td.first .icon { color: var(--gold); }
+.ledger-table tr.me td { background: rgba(212, 175, 55, 0.07); }
+.ledger-table .num { font-variant-numeric: tabular-nums; }
+.ledger-table .pos { color: var(--ok); }
+.ledger-table .neg { color: #ff8d80; }
+@media (max-width: 560px) {
+  .modal-body { padding: 14px; }
+  .ledger-table { font-size: 12.5px; }
+  .ledger-table th, .ledger-table td { padding: 8px 6px; }
+  .rules-table.wide { display: block; overflow-x: auto; }
+}

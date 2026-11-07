@@ -67,8 +67,8 @@ export function buildSettingsForm(settings = DEFAULT_SETTINGS, opts = {}) {
       ),
     );
 
-  const startChips = numberInput('startChips', s.startChips, { min: 1000, max: 1_000_000_000_000, step: 1000, disabled: ro });
-  const base = numberInput('base', s.base, { min: 1, max: 1_000_000_000_000, step: 1000, disabled: ro });
+  const startChips = numberInput('startChips', s.startChips, { min: 1000, max: 1_000_000_000_000, step: 1, disabled: ro });
+  const base = numberInput('base', s.base, { min: 1, max: 1_000_000_000_000, step: 1, disabled: ro });
   const maxPlayers = select('maxPlayers', [2, 3, 4, 5, 6].map((n) => [n, `${n}명`]), s.maxPlayers, ro);
   const turnSeconds = select('turnSeconds', SETTINGS_OPTIONS.turnSeconds, s.turnSeconds, ro);
   const refill = select('refill', SETTINGS_OPTIONS.refill, s.refill, ro);

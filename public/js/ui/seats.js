@@ -14,8 +14,14 @@ function cardSig(cards) {
   return (cards || []).map((c) => (c.id ? c.id : 'h')).join(',');
 }
 
-/** 슬롯 각도(도): 슬롯 0(나) = 90(하단), 시계방향 증가 */
+// 좌석 수별 슬롯 각도(도). 슬롯 0(나) = 90(하단), 시계방향 증가.
+// 6명/5명은 하단 양옆 좌석이 내 카드와 겹치지 않도록 균등 분할 대신 약간 위쪽으로 당긴다.
+const ANGLES = {
+  6: [90, 160, 205, 270, 335, 20],
+  5: [90, 165, 232, 308, 15],
+};
 export function slotAngle(k, n) {
+  if (ANGLES[n]) return ANGLES[n][k];
   return 90 + (k * 360) / n;
 }
 
@@ -77,7 +83,7 @@ function emptySeatEl(ctx, { angle, slot, seatNo }) {
   const canSit = ctx.me.seat == null && ctx.conn === 'open';
   return h(
     'div',
-    { class: 'seat seat-empty', dataset: { side: sideOf(angle), slot: String(slot) }, style: { '--ang': `${angle}deg` } },
+    { class: 'seat seat-empty', dataset: { side: sideOf(angle), slot: String(slot) }, style: { '--ang-base': `${angle}deg` } },
     h(
       'div',
       { class: 'seat-plate empty-plate' },
@@ -231,10 +237,9 @@ function seatEl(ctx, player, hp, { angle, slot }) {
 
   const el = h(
     'div',
-    { class: classes.join(' '), dataset: { id: player.id, side: sideOf(angle), slot: String(slot) }, style: { '--ang': `${angle}deg` } },
+    { class: classes.join(' '), dataset: { id: player.id, side: sideOf(angle), slot: String(slot) }, style: { '--ang-base': `${angle}deg` } },
     plate,
-    cardsWrap,
-    bet,
+    h('div', { class: 'seat-inner' }, cardsWrap, bet),
   );
   if (payout > 0) el.append(h('div', { class: 'seat-payout' }, formatSigned(payout)));
   return el;

@@ -2,3 +2,4 @@ node_modules/
 *.log
 .env
 test/e2e/out/
+test/ui/out/

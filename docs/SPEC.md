@@ -133,7 +133,7 @@ buildPots(contribs: Map<playerId, amount>, folded: Set<playerId>, carried: numbe
               reveal?: { cards:[id,id], hand:{name,...} },   // 쇼다운 후
               ledger:{ buyIn, refills, net, wins } }],
   hand: null | { ...engine.view(me) 그대로(no, stage, regame, dealerId, turnId, pot, carried, cur, legal, players[], result),
-                 deadline: ms epoch | null,            // 현재 단계 제한시간
+                 deadline: ms epoch | null, deadlineTotal: ms | null,  // 현재 단계 제한시간과 그 전체 길이
                  intermission: null | { until: ms epoch, regameNext: {reason, participants}|null, rejoinFee, rejoinable: [ids], rejoined: [ids] } },
   waiting: null | { reason: 'need_players'|'paused'|'lobby' },
   log: [{ts, text}] (최근 100개), chat: [{ts, from, text}] (최근 100개)

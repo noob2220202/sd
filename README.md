@@ -106,7 +106,7 @@ sudo certbot --nginx -d 실제도메인
 주의 사항:
 
 - **WebSocket 업그레이드**: 클라이언트는 `/ws` 경로로 WebSocket 을 연결합니다. 예시 설정에는 `Upgrade`/`Connection` 헤더 전달과 `proxy_read_timeout 3600s` 가 들어 있습니다(서버 하트비트 25초 간격이라 유휴 끊김 없음). 다른 프록시(Caddy, Traefik, Cloudflare 등)를 쓸 때도 `/ws` 에 대해 WebSocket 프록시가 켜져 있어야 합니다.
-- **`TRUST_PROXY=1`**: 프록시 뒤에서는 반드시 설정하세요. `X-Forwarded-*` 헤더를 신뢰해 실제 클라이언트 IP 기준으로 로그/제한을 처리합니다. 프록시가 없는데 켜면 IP 를 위조할 수 있으니 그 경우엔 끄세요.
+- **`TRUST_PROXY=1`**: 프록시 뒤에서는 설정하세요. express 가 `X-Forwarded-*` 헤더를 신뢰해 실제 클라이언트 주소와 프로토콜(https)을 올바르게 인식합니다. 프록시가 없으면 끄세요.
 - HTTPS 로 접속하면 클라이언트가 자동으로 `wss://` 를 사용합니다(별도 설정 불필요).
 
 ### 방화벽 (ufw)
@@ -235,7 +235,8 @@ cd seotda && git pull && docker compose -f deploy/docker-compose.yml up -d --bui
 
 ```
 server/
-  index.js            express 정적 서빙 + ws 부트스트랩 (/, /r/:code, /healthz, WebSocket /ws)
+  index.js            진입점(listen, 종료 시그널 처리)
+  app.js              express 정적 서빙 + ws 서버 조립 (/, /r/:code, /healthz, WebSocket /ws)
   config.js           환경변수
   net/
     protocol.js       메시지 검증, 방 설정 스키마/기본값
@@ -280,7 +281,8 @@ node --test test/*.test.js
 - `test/betting.test.js` 베팅 라운드(체크/삥/따당/쿼터/하프/맥스/올인/레이즈 제한)
 - `test/pots.test.js` 메인/사이드팟 레이어, 이월
 - `test/engine.test.js` 한 판 시나리오(기권승, 쇼다운, 올인 사이드팟, 구사 재경기 이월, 동점 이월, 타임아웃)
-- `test/room.test.js` 입장/퇴장/재접속/redaction/방장 승계
+- `test/room.test.js` 입장/퇴장/재접속/redaction/방장 승계/타이머/리필/재경기 참가
+- `test/server.test.js` 실제 HTTP·WebSocket 서버를 임시 포트에 띄워 프로토콜 전체 검증
 
 ```bash
 # E2E (Playwright). 처음 한 번 브라우저 설치가 필요합니다.
