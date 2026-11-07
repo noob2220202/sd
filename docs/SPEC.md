@@ -16,7 +16,8 @@
 ## 1. 디렉터리 구조
 ```
 server/
-  index.js            HTTP(express) + WebSocket(ws) 부트스트랩, 라우팅 (/, /r/:code, /healthz)
+  index.js            진입점: config 로 createApp 후 listen, SIGTERM 처리
+  app.js              createApp(config): express 정적 파일 + ws 서버 + 하트비트 (/, /r/:code, /healthz, /ws)
   config.js           환경변수 (PORT, HOST, TRUST_PROXY, ROOM_IDLE_MS, MAX_ROOMS ...)
   net/
     protocol.js       메시지 타입 상수, 검증(validate) 함수

@@ -4,7 +4,8 @@ import { Hand } from '../game/engine.js';
 import { normalizeSettings } from './protocol.js';
 import { formatChips } from '../../public/js/shared/format.js';
 
-export const INTERMISSION_MS = 7000; // 결과 표시 시간
+export const INTERMISSION_MS = 7000; // 쇼다운 결과 표시 시간
+export const FOLD_INTERMISSION_MS = 4000; // 기권승(카드 비공개) 표시 시간
 export const REGAME_INTERMISSION_MS = 9000; // 재경기 안내(참가 버튼 포함) 시간
 export const DISCONNECTED_TURN_MS = 60_000; // 제한시간 없음 설정에서 끊긴 플레이어의 턴 자동 처리 시간
 const MAX_LOG = 100;
@@ -687,7 +688,7 @@ export class Room {
       rejoinFee = Math.floor(this.carried / 2);
       for (const hp of this.hand.players) if (hp.folded && this.players.has(hp.id)) rejoinable.add(hp.id);
     }
-    const ms = isRegame ? REGAME_INTERMISSION_MS : INTERMISSION_MS;
+    const ms = isRegame ? REGAME_INTERMISSION_MS : r.type === 'fold' ? FOLD_INTERMISSION_MS : INTERMISSION_MS;
     this.intermission = { until: this.now() + ms, regameNext: this.pendingRegame, rejoinFee, rejoinable, rejoined: new Set() };
     this._setTimer('intermission', ms, () => {
       this.intermission = null;
