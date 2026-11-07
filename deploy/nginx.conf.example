@@ -1,0 +1,38 @@
+# nginx 리버스 프록시 예시 (WebSocket 업그레이드 포함)
+# /etc/nginx/sites-available/seotda 로 저장 후 sites-enabled 에 링크, nginx -t && systemctl reload nginx
+# TLS 는 certbot --nginx -d seotda.example.com 으로 발급하면 아래 server 블록에 자동 추가됩니다.
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name seotda.example.com;   # ← 도메인으로 변경
+
+    # 정적 파일/페이지
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket
+    location /ws {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;   # 유휴 소켓이 끊기지 않도록 (서버 하트비트 25초)
+        proxy_send_timeout 3600s;
+    }
+}

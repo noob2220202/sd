@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 103.2 168.2" width="103.2" height="168.2">
+  <defs>
+    <pattern id="lattice" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#7a1217"/>
+      <path d="M0 4h8M4 0v8" stroke="#8d1b21" stroke-width="0.7"/>
+    </pattern>
+    <radialGradient id="shine" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.25"/>
+    </radialGradient>
+  </defs>
+  <rect x="0.6" y="0.6" width="102" height="167" rx="7" fill="#5e0c10" stroke="#000" stroke-width="1.2"/>
+  <rect x="5" y="5" width="93.2" height="158.2" rx="4.5" fill="url(#lattice)"/>
+  <rect x="5" y="5" width="93.2" height="158.2" rx="4.5" fill="url(#shine)"/>
+  <rect x="9" y="9" width="85.2" height="150.2" rx="3" fill="none" stroke="#d4a24c" stroke-width="1.1" opacity="0.85"/>
+  <rect x="12" y="12" width="79.2" height="144.2" rx="2.2" fill="none" stroke="#d4a24c" stroke-width="0.5" opacity="0.6"/>
+  <circle cx="51.6" cy="84.1" r="17" fill="none" stroke="#d4a24c" stroke-width="1.1" opacity="0.9"/>
+  <circle cx="51.6" cy="84.1" r="12.5" fill="#6e1014" stroke="#d4a24c" stroke-width="0.6" opacity="0.95"/>
+  <path d="M51.6 73.5a10.6 10.6 0 0 1 0 21.2a5.3 5.3 0 0 1 0-10.6a5.3 5.3 0 0 0 0-10.6z" fill="#d4a24c" opacity="0.9"/>
+  <circle cx="51.6" cy="78.8" r="1.6" fill="#6e1014"/>
+  <circle cx="51.6" cy="89.4" r="1.6" fill="#d4a24c"/>
+</svg>

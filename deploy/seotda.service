@@ -1,0 +1,24 @@
+# systemd 유닛 예시. /etc/systemd/system/seotda.service 로 복사 후
+#   sudo systemctl daemon-reload && sudo systemctl enable --now seotda
+# WorkingDirectory 와 User 를 서버 환경에 맞게 수정하세요.
+[Unit]
+Description=Seotda (섯다) web game server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/seotda
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+Environment=TRUST_PROXY=1
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

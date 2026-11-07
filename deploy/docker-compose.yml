@@ -1,0 +1,16 @@
+# 저장소 루트에서: docker compose -f deploy/docker-compose.yml up -d --build
+services:
+  seotda:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: seotda
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      TRUST_PROXY: "1"
+      ROOM_IDLE_MS: "7200000"
+    ports:
+      # 호스트 127.0.0.1:3000 → nginx 리버스 프록시 뒤에 두는 것을 권장
+      - "127.0.0.1:3000:3000"

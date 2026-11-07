@@ -1,0 +1,20 @@
+{
+  "name": "seotda",
+  "version": "1.0.0",
+  "description": "친구들끼리 웹에서 즐기는 무기명 한게임식 3장 섯다 (사행성 없음)",
+  "private": true,
+  "type": "module",
+  "main": "server/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/",
+    "test:e2e": "node test/e2e/run.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}
